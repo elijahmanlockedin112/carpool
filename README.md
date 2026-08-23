@@ -3,113 +3,99 @@
 A shared week calendar for four people. You add your before-school and after-school
 things; everyone else sees them. That's it.
 
-No frameworks, no build step. Two files: `index.html` and `schedule.json`.
+**Live at <https://elijahmanlockedin112.github.io/carpool/>**
+
+No frameworks, no build step, no npm.
+
+## It's encrypted
+
+The repo is public — that's what free GitHub Pages requires — so `schedule.json` is
+encrypted (AES-256-GCM) before it's ever written. Anyone who wanders into the repo sees
+this and nothing else:
+
+```json
+{ "v": 1, "iv": "VV239ec28G8y+6xV", "ct": "03vxhZHJ6bCR1rRuu7PvSRWuujrnqTcT…" }
+```
+
+No names, no times, no activities. The key never goes to GitHub — it lives in each
+person's browser, put there once by their setup link. Opening the page without the key
+shows a locked screen.
+
+This is real encryption, not a JavaScript password box. A password check on a static
+page is decoration; this isn't.
 
 ## Using it
 
 Each weekday is a column, split into **Before school** and **After school**. Hit **+ Add**
 on a day, pick who it's for, a start time and optionally an end time, and what it is.
-Tick **Repeats every week** for standing things like practice — it'll show up on that
-weekday from then on.
+Tick **Repeats every week** for standing things like practice.
 
-Tap any event to change or delete it. Then hit **Save**.
+Tap any event to change or delete it. Then hit **Save**. Everyone has a color.
 
-Everyone gets a color, so you can scan a column and see whose is whose.
+## Setting up the other three
 
-## How the others see it
+**1. Make a token** (once, you only). At
+**github.com/settings/personal-access-tokens** → *Fine-grained token* → Repository
+access: **Only select repositories** → `carpool` → Permissions → Repository permissions
+→ **Contents: Read and write**. Nothing else.
 
-**Viewing is the easy half.** Once Pages is on, the site lives at
-`https://YOURNAME.github.io/carpool/`. Anyone with that link opens it — no GitHub
-account, no login, no app install, any phone. Send them the link, tell them to Add to
-Home Screen, done. The page re-fetches every time it opens, so opening it is always
-current. (There's no push — if it's already open, hit ↻ to pull in new stuff.)
+**2. Set yourself up.** Open the site → gear → paste the token and
+`elijahmanlockedin112/carpool` → pick your name → **Done**. Add an event and hit **Save**
+so the file gets sealed.
 
-**Adding is the part that needs a decision.** Saving means writing to the repo, and
-that needs write access. Two ways to give it to them:
+**3. Send each of them a link.** Gear → **Copy setup link**. That link carries the repo,
+the token, and the encryption key. They tap it once, pick their name, and they're in —
+no GitHub account, nothing to type.
 
-**Option A — one shared token (easiest, and what the app is set up for).**
-Make a single fine-grained token and send the other three a setup link. They never need
-a GitHub account.
+Send it **directly to each person**, not to a group chat. Anyone with the link can read
+and edit the calendar. It rides in the URL's `#` fragment, which browsers never send to
+any server, and the app wipes it out of the address bar on arrival — but it's still the
+keys to the thing.
 
-- Make the token at **github.com/settings/personal-access-tokens** → *Fine-grained token*
-- Repository access: **Only select repositories** → `carpool`
-- Permissions → Repository permissions → **Contents: Read and write**. Nothing else.
-- Open the site → gear → paste the token and `YOURNAME/carpool` → **Done**
-- Open the gear again → **Copy setup link** → send it to each of the other three
+If a link gets loose: revoke the token on GitHub, then gear → Raw JSON → **Save** with a
+fresh key (or just delete and remake the repo — it's a calendar). Send out new links.
 
-They tap the link once. It fills in the repo and token, wipes itself out of the address
-bar, and asks them to pick their name. That's their whole setup.
+## Day to day
 
-Send that link **directly to each person**, not to a group chat or anywhere it gets
-forwarded — it contains the token, so whoever holds it can edit the calendar. (It's in
-the URL's `#` fragment, which browsers never transmit to any server, but it's still the
-token.) If it gets loose, revoke the token on the GitHub page above and send a new link.
-
-What you're accepting: anyone holding that token can edit that one file in that one
-repo, and nothing else — it can't touch your other repos or your account. If a phone
-gets lost, revoke it on that page and hand out a new one. Every commit will show as
-your account, but each event records who it belongs to, so you can still tell who
-added what.
-
-**Option B — everyone gets their own.** Add the other three as repo collaborators
-(Settings → Collaborators; free on public repos), and each makes their own token the
-same way. More setup, but commits are properly attributed and you can revoke one person
-without disrupting the rest.
-
-**Without any token**, Save copies the JSON to the clipboard and you paste it into
-`schedule.json` on GitHub by hand. That still needs a GitHub account with write access,
-so it's a fallback, not a way around the above.
-
-## Setup
-
-**1.** Make a GitHub repo called `carpool`. Upload `index.html` and `schedule.json`.
-
-**2.** Repo → **Settings** → **Pages** → Source: *Deploy from a branch*, Branch: `main`,
-folder `/ (root)`. A minute later it's live.
-
-**3.** Set yourself up (gear → repo + token → Done), then send everyone else a
-**Copy setup link** link. They tap it and pick their name.
-
-Saving merges: it keeps everyone else's events as they are on GitHub and only replaces
-yours, so two people saving close together don't wipe each other out.
+Saving merges — it keeps everyone else's events as they are and only replaces yours, so
+two people saving close together don't wipe each other out. Hit ↻ to pull the latest.
+There's no push notification; opening the page always gets you current data.
 
 To rename people: gear → **Raw JSON** → edit `"people"` → **Apply** → **Save**.
 
-## For Claude
+## Reading it outside the browser
 
-Fetch `https://raw.githubusercontent.com/YOURNAME/carpool/main/schedule.json`.
+```bash
+node decrypt.js <key>
+```
 
-`events` is a flat list. Each one has:
+The key is the `k` value from a setup link. Pass a file path as a second argument to read
+a local copy instead of the live one. This is also how you'd hand the calendar to Claude —
+give it the key, or just paste the decrypted output.
 
-| field | meaning |
-|---|---|
-| `person` | who it belongs to |
-| `date` | `YYYY-MM-DD` |
-| `when` | `before` or `after` school |
-| `time` | start, 24h `HH:MM` |
-| `end` | end time, 24h — may be empty |
-| `title` | what it is |
-| `repeat` | if true, happens that weekday every week from `date` onward |
+`events` is a flat list. Each has `person`, `date` (`YYYY-MM-DD`), `when` (`before` or
+`after` school), `time` (start, 24h), `end` (may be empty), `title`, and `repeat` (if
+true, that weekday every week from `date` onward).
 
-This file records schedules only — there's nothing in it about who drives, and that's
-deliberate. Don't infer or suggest a driver.
+There is nothing in this file about who drives, and that's deliberate — don't infer or
+suggest a driver.
 
-## One thing to know
+## What encryption doesn't cover
 
-GitHub Pages is static hosting, so a password on the page can't actually protect
-anything — any JS check is visible in the page source. Pages from a private repo needs
-a paid plan, so the repo is public and this file is readable by anyone with the URL.
+- Anyone holding a setup link can read everything. Losing a phone means revoking.
+- GitHub can see the file size and how often you commit — not the contents.
+- The list of *names* lives inside the encrypted blob, so that's covered too.
 
-Fine for first names, activity labels, and times. Keep the school name, addresses, and
-phone numbers out of it. Worth telling Wesley and Crystal it's a public page before
-their stuff goes in.
+Still worth telling Wesley and Crystal this lives on the internet before their schedules
+go in, even encrypted.
 
 ## Files
 
 ```
 index.html      the app
-schedule.json   the data
-.claude/        local preview helper, don't upload
+schedule.json   the encrypted calendar
+decrypt.js      read it from the command line
+.claude/        local preview helper, not published
 ```
 
 Preview locally with `node .claude/serve.js` → <http://localhost:8777>.

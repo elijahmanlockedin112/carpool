@@ -1,6 +1,5 @@
 {
-  "_readme": "Shared week calendar. Each entry is one event. when: before | after (school). repeat:true means it happens that weekday every week from date onward. Times are 24h local.",
-  "updated": "2026-08-23T12:00:00.000Z",
-  "people": ["Elijah", "Avery", "Wesley", "Crystal"],
-  "events": []
+  "v": 1,
+  "iv": "VV239ec28G8y+6xV",
+  "ct": "03vxhZHJ6bCR1rRuu7PvSRWuujrnqTcTqgZvSS8yKd3g89F+lfIq6DPSSyl9PaIZzwfdzAJffEIwPQcyZeA9qZhKPvPz8G7iSRg6i2H/iZlYmsHgtP9RKfel0x7bB8uE1tnO8UbB4jM2ueFtps0LFMQyrOCJmmtPClKSMcTTf6UXv0ECc7Y9cUHpNZyAfTtjkc/YCiMEX14RbmIpVNThfo0SfaJEmGtZM8uobKTPm+hrTdzIbco8pReNa1kfBtq8ArMt5OlBQkmmNYMK9oJzqskJ1OsyFC0fJuxAGp4rtWh4twlohSSDdgKSEujDAMMgjO9+AhKKZOvMvxX5ZZn1ah3XpfnboqZpwYdsYaXsW8/jdw78FOa89eUL4/MfbXntHBgAsKaytaYsnFAExybnzWwDnBfIuMbFak7wYDMEruROG34F+50GEPH4VajvJTSk"
 }
