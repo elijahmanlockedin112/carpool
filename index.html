@@ -457,7 +457,11 @@ async function fetchIt(){
     }
     document.getElementById('save').disabled = false;
     syncSaveBtn();
-    dirty.clear(); render(); setStatus('up to date','ok');
+    dirty.clear(); render();
+    // Say so plainly rather than letting someone add events that quietly
+    // never leave the device.
+    if(autosaves()) setStatus('up to date','ok');
+    else setStatus('read-only here — add your token in Settings to save','err');
     if(!cfg.me) document.getElementById('gear').click();   // first run: pick who you are
     return;
   }
@@ -663,6 +667,23 @@ document.getElementById('s-ok').onclick = ()=>{
 document.getElementById('prev').onclick = ()=>{ weekStart=addD(weekStart,-7); render(); };
 document.getElementById('next').onclick = ()=>{ weekStart=addD(weekStart, 7); render(); };
 document.getElementById('refresh').onclick = ()=> fetchIt();
+
+/* Re-read whenever the app comes back to the foreground. Tapping a Home Screen
+   icon on iOS resumes the old session instead of reloading, so without this the
+   phone shows whatever it fetched days ago and never sees anyone else's edits.
+   Skipped while there are unsaved edits, so a refetch can't clobber them. */
+let lastLook = Date.now();
+function refreshIfStale(){
+  if(document.visibilityState !== 'visible') return;
+  if(dirty.size || saving) return;                 // never fight an in-flight save
+  if(Date.now() - lastLook < 15000) return;        // don't hammer on quick tab flicks
+  lastLook = Date.now();
+  fetchIt();
+}
+document.addEventListener('visibilitychange', refreshIfStale);   // fires on document, not window
+addEventListener('focus', refreshIfStale);
+addEventListener('pageshow', e=>{ if(e.persisted) refreshIfStale(); });
+setInterval(refreshIfStale, 120000);               // and a slow poll while it sits open
 function setStatus(m,c){ const e=document.getElementById('status'); e.textContent=m; e.className=c||''; }
 
 const fromLink = readLink();
