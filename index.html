@@ -183,8 +183,8 @@ footer{margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;fo
       With it, Save writes straight to GitHub. Without it, Save copies the JSON to paste in.</p></div>
     <div><label>Your key <span style="text-transform:none;letter-spacing:0">&mdash; what unlocks the calendar</span></label>
       <input type="text" id="s-key" autocapitalize="off" spellcheck="false">
-      <p class="hint" style="margin:6px 0 0">Write this down somewhere safe. If this browser ever forgets it,
-      paste it back here to get straight back in &mdash; you don't need a new setup link.</p></div>
+      <p class="hint" style="margin:6px 0 0">Paste either the key itself <b>or your whole setup link</b> &mdash;
+      both work. Keep a copy somewhere safe; this is what gets you back in if a device forgets.</p></div>
     <div id="s-share" style="display:none">
       <label>Set the others up</label>
       <button class="btn" type="button" id="s-link" style="width:100%">Copy setup link</button>
@@ -641,8 +641,18 @@ document.getElementById('s-ok').onclick = ()=>{
                 .replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,'');
   cfg.token = document.getElementById('s-tok').value.trim();
 
-  // A pasted key means "let me back in" - reload so it takes effect.
-  const typedKey = document.getElementById('s-key').value.trim();
+  // "Let me back in." Accept the whole setup link pasted in here, not just the
+  // bare key - on a phone, pasting a link you already have beats picking 43
+  // random characters out of it.
+  let typedKey = document.getElementById('s-key').value.trim();
+  if(typedKey.indexOf('#s=') > -1){
+    try{
+      const o = JSON.parse(unb64(unurl(typedKey.split('#s=')[1])));
+      if(o.r) cfg.repo  = o.r;
+      if(o.t) cfg.token = o.t;
+      if(o.k) typedKey  = o.k;
+    }catch(e){ setStatus('that link could not be read','err'); }
+  }
   const keyChanged = typedKey && typedKey !== cfg.key;
   if(typedKey) cfg.key = typedKey;
   keep(); st.close(); syncSaveBtn();
