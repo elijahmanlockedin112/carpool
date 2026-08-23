@@ -349,7 +349,10 @@ document.getElementById('d-del').onclick = ()=>{
   ed.close(); touched(); render();
 };
 
-function touched(){ setStatus('unsaved changes',''); }
+function touched(){
+  if(autosaves()) queueSave();
+  else setStatus('unsaved changes — press Save','');
+}
 
 /* ---------- encryption ----------
    schedule.json is stored as AES-256-GCM ciphertext, so the public repo shows
@@ -431,6 +434,7 @@ async function fetchIt(){
       newKey();                         // mint a key so the next Save seals it
     }
     document.getElementById('save').disabled = false;
+    syncSaveBtn();
     dirty.clear(); render(); setStatus('up to date','ok');
     if(!cfg.me) document.getElementById('gear').click();   // first run: pick who you are
     return;
@@ -449,7 +453,41 @@ function norm(d){
 /* ---------- save ---------- */
 function json(){ data.updated = new Date().toISOString(); return JSON.stringify(data,null,2)+'\n'; }
 
-document.getElementById('save').onclick = async ()=>{
+/* ---------- autosave ----------
+   Edits save themselves. Debounced, so a burst of typing becomes one commit,
+   and serialised, so a save that lands mid-flight runs again after rather
+   than racing the first one. */
+let saveTimer = null, saving = false, again = false;
+
+function queueSave(){
+  clearTimeout(saveTimer);
+  setStatus('saving…','');
+  saveTimer = setTimeout(runSave, 1200);
+}
+async function runSave(){
+  clearTimeout(saveTimer);
+  if(saving){ again = true; return; }
+  saving = true;
+  try{ await doSave(); }
+  finally{
+    saving = false;
+    if(again){ again = false; runSave(); }
+  }
+}
+function autosaves(){ return !!(cfg.repo && cfg.token); }
+function syncSaveBtn(){
+  // With a token the button is redundant - it only comes back to offer a retry.
+  document.getElementById('save').style.display = autosaves() ? 'none' : '';
+  document.getElementById('save').textContent = 'Save';
+}
+
+document.getElementById('save').onclick = ()=> runSave();
+
+addEventListener('beforeunload', e=>{
+  if(dirty.size){ e.preventDefault(); e.returnValue = ''; }
+});
+
+async function doSave(){
   if(!cfg.repo || !cfg.token){
     document.getElementById('s-json').value = json();     // readable, for editing here
     const sealedText = await encrypt(json());             // what actually belongs in the file
@@ -484,8 +522,13 @@ document.getElementById('save').onclick = async ()=>{
     const put = await fetch(api,{method:'PUT',headers:H,body:JSON.stringify(body)});
     if(!put.ok){ const j=await put.json().catch(()=>({})); throw new Error('GitHub said '+put.status+(j.message?' — '+j.message:'')); }
     dirty.clear(); render(); setStatus('saved','ok');
-  }catch(err){ setStatus(err.message,'err'); }
-};
+    syncSaveBtn();
+  }catch(err){
+    setStatus(err.message+' — nothing lost, press Retry','err');
+    const b = document.getElementById('save');     // give them a way back
+    b.style.display = ''; b.textContent = 'Retry';
+  }
+}
 
 function b64(s){ const u=new TextEncoder().encode(s); let b=''; u.forEach(c=>b+=String.fromCharCode(c)); return btoa(b); }
 function unb64(s){ const b=atob(s.replace(/\s/g,'')); const u=new Uint8Array(b.length);
@@ -546,7 +589,7 @@ document.getElementById('s-ok').onclick = ()=>{
   cfg.repo  = document.getElementById('s-repo').value.trim()
                 .replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,'');
   cfg.token = document.getElementById('s-tok').value.trim();
-  keep(); st.close(); render();
+  keep(); st.close(); syncSaveBtn(); render();
 };
 
 /* ---------- chrome ---------- */
