@@ -30,7 +30,15 @@ Each weekday is a column, split into **Before school** and **After school**. Hit
 on a day, pick who it's for, a start time and optionally an end time, and what it is.
 Tick **Repeats every week** for standing things like practice.
 
-Tap any event to change or delete it. Then hit **Save**. Everyone has a color.
+Tap any event to change or delete it. Everyone has a color.
+
+**It saves itself.** A second or so after you add, edit, or delete something it writes to
+GitHub on its own — there's no Save button to press. The status line at the bottom says
+`saving…` then `saved`. If a save fails (no signal, say), nothing is lost: a **Retry**
+button appears and your edit stays put until it goes through.
+
+The one exception is if you haven't set a token — then autosave can't work, and a Save
+button stays put to copy the encrypted file for pasting into GitHub by hand.
 
 ## Setting up the other three
 
