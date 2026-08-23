@@ -384,33 +384,60 @@ function lock(msg){
   setStatus('locked','err');
 }
 
-/* ---------- load ---------- */
+/* ---------- load ----------
+   Sources in order of trustworthiness. The authenticated API is never CDN
+   cached, so it always reflects the last Save; raw.githubusercontent can lag
+   by minutes; the copy served next to this page lags until Pages rebuilds. */
 async function fetchIt(){
   setStatus('loading…','');
-  const urls = [];
-  if(cfg.repo) urls.push('https://raw.githubusercontent.com/'+cfg.repo+'/main/schedule.json?t='+Date.now());
-  urls.push('./schedule.json?t='+Date.now());
-  for(const u of urls){
+  const sources = [];
+
+  if(cfg.repo && cfg.token) sources.push(async ()=>{
+    const r = await fetch('https://api.github.com/repos/'+cfg.repo+'/contents/schedule.json?t='+Date.now(),
+      {headers:{Authorization:'Bearer '+cfg.token, Accept:'application/vnd.github+json'}, cache:'no-store'});
+    if(!r.ok) throw 0;
+    return JSON.parse(unb64((await r.json()).content));
+  });
+  if(cfg.repo) sources.push(async ()=>{
+    const r = await fetch('https://raw.githubusercontent.com/'+cfg.repo+'/main/schedule.json?t='+Date.now(),
+      {cache:'no-store'});
+    if(!r.ok) throw 0;
+    return r.json();
+  });
+  sources.push(async ()=>{
+    const r = await fetch('./schedule.json?t='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw 0;
+    return r.json();
+  });
+
+  let sawStale = false;
+  for(const get of sources){
     let raw;
-    try{
-      const r = await fetch(u,{cache:'no-store'});
-      if(!r.ok) continue;
-      raw = await r.json();
-    }catch(err){ continue; }
+    try{ raw = await get(); }catch(err){ continue; }
 
     if(sealed(raw)){
       if(!cfg.key) return lock('Open the setup link you were sent, on this device, to unlock it.');
       try{ data = norm(await decrypt(raw)); }
       catch(e){ return lock('That key does not open this calendar — your setup link may be out of date. Ask for a fresh one.'); }
+    }else if(cfg.key){
+      // We hold a key, so the real calendar is encrypted. An unencrypted file
+      // here is a stale cached copy from before it was sealed. Adopting it
+      // would look exactly like everything had been deleted - and the next
+      // Save would write that emptiness back over everyone's events.
+      sawStale = true;
+      continue;
     }else{
-      data = norm(raw);                 // still plaintext: this is the very first run
-      if(!cfg.key) newKey();            // mint a key so the next Save seals it
+      data = norm(raw);                 // genuinely the first run
+      newKey();                         // mint a key so the next Save seals it
     }
     document.getElementById('save').disabled = false;
     dirty.clear(); render(); setStatus('up to date','ok');
     if(!cfg.me) document.getElementById('gear').click();   // first run: pick who you are
     return;
   }
+
+  if(sawStale) return lock('Only an out-of-date copy came back, so nothing is being shown rather than '+
+                           'risk overwriting the real calendar. Check your connection and press &#8635;.');
   setStatus('could not load schedule.json','err');
 }
 function norm(d){
