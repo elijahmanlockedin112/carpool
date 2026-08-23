@@ -1,5 +1,5 @@
 {
-  "_readme": "Placeholder. The first person to open the site and press Save replaces this with an encrypted calendar - after that, this file is unreadable without the key from a setup link.",
-  "people": ["Elijah", "Avery", "Wesley", "Crystal"],
-  "events": []
+  "v": 1,
+  "iv": "ugzta9M/DOvxe7rq",
+  "ct": "Biu36h2OS6TgnzFV1vaCiN9V8rA7+sEP3wlXeqHxKVUz4umz+1BqieqlEzJzqZc/c+oMJ1rGh7iJuaHuql80AEpNoOWB2VR/vbH6iZiA7olf5dB+kI9fSdSjr0kq6J77/wPgqyBXz/uNU5fnHZ73ZpqtnQJY5wSZskWS13ZWuGkuJZRfdmoVg/ByeIyqh4eKQBUQdLJtNcHc5svgTIMujm0ZK9s6W0MWisXYSVJQy1lSDk4dJtWfF2VmaMO8z2BIxTUzHdLxrRv57E9DILnaWzfdxAv91CouQX6qaH1+WT+GT2Rr/cFSG/NliA4n1jc2nEwVlE1OtEowb892EiEXC5TrUI7gL8u9317x8hGX5llujYcZat4bYd3YJIT1buMaimz5G7eOrA56kHL+XHfMfgCwgi4Z0KlNWIhVlmkECdsa0WQym+p21zjASqEXZRwwhJlGPRGcm3/oI6a9pKGey1zpSMgeNO6bXb4T4VP/m1v/dy3WtkGGV0Hhor3W99SNnZP7Ci77ID7b2UDfTb3+QAsyZurB2PVJP9o8rSrw2GEXTmj06d3++5OyeGzR/CgvoaHO5P/WxoF2uxpr3dWFYTnNarCWtZKEunYsItwPQrZWOcRLaQIUCSShFxOotHJXKKfETXkTSf4CexxzFmJpkgM4GGkaxh35ojc8d+zBzrreRB+XGfe9hu3hWgyYnn4APTCMpv8Gf51QK26jwLQN54cwha204xrPhI0="
 }
