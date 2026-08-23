@@ -1,0 +1,6 @@
+{
+  "_readme": "Shared week calendar. Each entry is one event. when: before | after (school). repeat:true means it happens that weekday every week from date onward. Times are 24h local.",
+  "updated": "2026-08-23T12:00:00.000Z",
+  "people": ["Elijah", "Avery", "Wesley", "Crystal"],
+  "events": []
+}
