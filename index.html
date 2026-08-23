@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Carpool Calendar</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<!-- Tells iOS this is a real standalone app, not a bookmark. Without it the
+     Home Screen icon gets a throwaway storage box and forgets the key. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carpool">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2f62ff">
 <style>
 :root{
   --bg:#f4f6f8; --panel:#fff; --panel2:#fafbfc; --line:#e2e6ec;
@@ -66,6 +76,11 @@ h1{font-size:18px;margin:0;flex:1;letter-spacing:-.01em}
 .ev .tm{font-size:11px;color:var(--mute);margin-left:auto;white-space:nowrap}
 .ev .ti{font-size:13px;margin-top:1px;overflow-wrap:anywhere}
 .ev .rp{font-size:10px;color:var(--faint)}
+
+.banner{background:var(--panel);border:1px solid var(--accent);border-radius:var(--radius);
+        padding:12px 14px;margin-bottom:12px}
+.banner b{font-size:13.5px}
+.banner p{margin:5px 0 9px;font-size:13px;color:var(--mute);line-height:1.45}
 
 .locked{grid-column:1/-1;background:var(--panel);border:1px solid var(--line);
         border-radius:var(--radius);padding:26px 20px;text-align:center}
@@ -173,6 +188,7 @@ footer{margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;fo
     <div id="s-share" style="display:none">
       <label>Set the others up</label>
       <button class="btn" type="button" id="s-link" style="width:100%">Copy setup link</button>
+      <button class="btn" type="button" id="s-open" style="width:100%;margin-top:7px">Open it here &mdash; to add to Home Screen</button>
       <p class="hint" style="margin:6px 0 0">One tap fills in the repo and token for them &mdash; they just pick
       their name. Treat the link like the token itself: anyone who has it can edit the calendar, so send it
       directly, not to a group everyone can see.</p>
@@ -557,9 +573,34 @@ function readLink(){
     if(o.t) cfg.token = o.t;
     if(o.k) cfg.key   = o.k;
     keep();
-    history.replaceState(null,'',location.pathname);   // don't leave it in the bar
+    // The link is deliberately LEFT in the address bar for now. On iPhone you
+    // need it there when you tap Share > Add to Home Screen, so the icon itself
+    // carries the key and survives Safari clearing its storage. It gets wiped
+    // when you say you're done, or after two minutes.
+    hideTimer = setTimeout(hideLink, 120000);
     return true;
   }catch(e){ return false; }
+}
+
+let hideTimer = null;
+function hideLink(){
+  clearTimeout(hideTimer);
+  if(location.hash) history.replaceState(null,'',location.pathname);
+  const b = document.getElementById('banner');
+  if(b) b.remove();
+}
+
+function showInstallBanner(){
+  const d = document.createElement('div');
+  d.id = 'banner';
+  d.className = 'banner';
+  d.innerHTML =
+    '<b>&#128273; Your key is in the address bar right now.</b>' +
+    '<p>On iPhone: tap <b>Share</b> &rarr; <b>Add to Home Screen</b> before hiding this. ' +
+    'The icon then remembers your key even if Safari forgets everything.</p>' +
+    '<button class="btn" id="banner-x">Added it &mdash; hide the link</button>';
+  document.querySelector('.wrap').insertBefore(d, document.querySelector('header').nextSibling);
+  document.getElementById('banner-x').onclick = hideLink;
 }
 
 /* ---------- settings ---------- */
@@ -571,6 +612,7 @@ document.getElementById('s-link').onclick = ()=>{
     ()=> prompt('Copy this link:', l) );
   else prompt('Copy this link:', l);
 };
+document.getElementById('s-open').onclick = ()=>{ st.close(); location.href = mkLink(); };
 document.getElementById('gear').onclick = ()=>{
   document.getElementById('s-share').style.display = (cfg.repo && cfg.token) ? '' : 'none';
   document.getElementById('s-repo').value = cfg.repo||'';
@@ -614,7 +656,9 @@ document.getElementById('refresh').onclick = ()=> fetchIt();
 function setStatus(m,c){ const e=document.getElementById('status'); e.textContent=m; e.className=c||''; }
 
 const fromLink = readLink();
-fetchIt().then(()=>{ if(fromLink) setStatus('set up — now pick your name','ok'); });
+fetchIt().then(()=>{
+  if(fromLink){ showInstallBanner(); setStatus('set up — pick your name','ok'); }
+});
 </script>
 </body>
 </html>
