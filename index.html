@@ -166,6 +166,10 @@ footer{margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;fo
       <input type="text" id="s-tok" placeholder="github_pat_&hellip;" autocapitalize="off" spellcheck="false">
       <p class="hint" style="margin:6px 0 0">Fine-grained, this repo only, <b>Contents: Read and write</b>.
       With it, Save writes straight to GitHub. Without it, Save copies the JSON to paste in.</p></div>
+    <div><label>Your key <span style="text-transform:none;letter-spacing:0">&mdash; what unlocks the calendar</span></label>
+      <input type="text" id="s-key" autocapitalize="off" spellcheck="false">
+      <p class="hint" style="margin:6px 0 0">Write this down somewhere safe. If this browser ever forgets it,
+      paste it back here to get straight back in &mdash; you don't need a new setup link.</p></div>
     <div id="s-share" style="display:none">
       <label>Set the others up</label>
       <button class="btn" type="button" id="s-link" style="width:100%">Copy setup link</button>
@@ -382,7 +386,9 @@ function sealed(o){ return o && o.v===1 && o.ct; }
 
 function lock(msg){
   document.getElementById('week').innerHTML =
-    '<div class="locked"><b>&#128274; This calendar is locked</b><p>'+msg+'</p></div>';
+    '<div class="locked"><b>&#128274; This calendar is locked</b><p>'+msg+'</p>'+
+    '<button class="btn" id="unlock" style="margin-top:12px">Enter my key</button></div>';
+  document.getElementById('unlock').onclick = ()=> document.getElementById('gear').click();
   document.getElementById('save').disabled = true;
   setStatus('locked','err');
 }
@@ -569,8 +575,11 @@ document.getElementById('gear').onclick = ()=>{
   document.getElementById('s-share').style.display = (cfg.repo && cfg.token) ? '' : 'none';
   document.getElementById('s-repo').value = cfg.repo||'';
   document.getElementById('s-tok').value  = cfg.token||'';
-  document.getElementById('s-json').value = JSON.stringify(data,null,2);
-  document.getElementById('s-me').innerHTML = data.people.map(p=>
+  document.getElementById('s-key').value  = cfg.key||'';
+  // Settings has to work while locked - that is precisely when it is needed.
+  const names = (data && data.people) ? data.people : ['Elijah','Avery','Wesley','Crystal'];
+  document.getElementById('s-json').value = data ? JSON.stringify(data,null,2) : '';
+  document.getElementById('s-me').innerHTML = names.map(p=>
     '<button type="button" value="'+esc(p)+'">'+esc(p)+'</button>').join('');
   seg('s-me', cfg.me||'');
   st.showModal();
@@ -589,7 +598,13 @@ document.getElementById('s-ok').onclick = ()=>{
   cfg.repo  = document.getElementById('s-repo').value.trim()
                 .replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,'');
   cfg.token = document.getElementById('s-tok').value.trim();
-  keep(); st.close(); syncSaveBtn(); render();
+
+  // A pasted key means "let me back in" - reload so it takes effect.
+  const typedKey = document.getElementById('s-key').value.trim();
+  const keyChanged = typedKey && typedKey !== cfg.key;
+  if(typedKey) cfg.key = typedKey;
+  keep(); st.close(); syncSaveBtn();
+  if(keyChanged) fetchIt(); else render();
 };
 
 /* ---------- chrome ---------- */
